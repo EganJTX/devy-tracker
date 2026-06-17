@@ -1070,49 +1070,59 @@ async function doEligCheck() {
     return !ownedNames.has(normName(name));
   });
 
-  const totalMatches = ownedMatches.length + espnMatches.length;
+  // Split ESPN matches: only ineligible players are worth naming individually.
+  // Eligible-and-unowned matches are never named — that would expose recruit data
+  // to casual/partial searches and turn this into a roster-browsing tool.
+  const ineligibleMatches = espnMatches.filter(m => {
+    const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
+    return enrollYear > curYear - CFG.eligYears;
+  });
+  const eligibleUnownedCount = espnMatches.length - ineligibleMatches.length;
 
-  // No matches anywhere
-  if (totalMatches === 0) {
+  const totalNamedMatches = ownedMatches.length + ineligibleMatches.length;
+
+  // Nothing owned, nothing ineligible — collapse to one generic line regardless of
+  // whether there were 0 or several eligible-unowned hits behind the scenes.
+  if (totalNamedMatches === 0) {
     out.className = 'elig-result maybe';
-    out.textContent = `Not found in our reference data — verify before picking`;
+    out.textContent = `Not owned and not flagged ineligible — might be available, please verify before picking`;
     return;
   }
 
-  // Build unified status lines for every distinct match — each tagged with its own status
-  const lines = []; // { text, status: 'owned'|'inelig'|'maybe' }
+  // Build status lines — only for owned and ineligible matches
+  const lines = []; // { text, status: 'owned'|'inelig' }
 
   ownedMatches.forEach(o => {
     const pickStr = o.yearPick ? `  —  Drafted ${o.yearPick}` : '';
     lines.push({ text: `👤 ${o.playerName} — Owned by ${o.owner}${pickStr}`, status: 'owned' });
   });
 
-  espnMatches.forEach(m => {
+  ineligibleMatches.forEach(m => {
     const name = gc(COL.e_name, m);
     const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
-    const ineligible = enrollYear > curYear - CFG.eligYears;
-    if (ineligible) {
-      lines.push({ text: `⚠ ${name} — Ineligible this season (class of ${enrollYear})`, status: 'inelig' });
-    } else {
-      lines.push({ text: `${name} — Appears available, please verify`, status: 'maybe' });
-    }
+    lines.push({ text: `⚠ ${name} — Ineligible this season (class of ${enrollYear})`, status: 'inelig' });
   });
+
+  // Append a generic note if there were ALSO eligible-unowned matches we're not naming
+  if (eligibleUnownedCount > 0) {
+    lines.push({ text: `Other matching players might also be available — verify spelling if you don't see who you're looking for`, status: 'maybe' });
+  }
 
   const colorFor = status =>
     status === 'owned'  ? 'var(--warn)' :
     status === 'inelig' ? 'var(--err)'  :
     'var(--maybe)';
 
-  // Single match — show plainly without "multiple matches" framing
-  if (totalMatches === 1) {
+  // Single named match (and no generic "others may exist" note) — show plainly
+  if (totalNamedMatches === 1 && eligibleUnownedCount === 0) {
     out.className = 'elig-result ' + lines[0].status;
     out.textContent = lines[0].text;
     return;
   }
 
-  // Multiple distinct matches — show all, each colored by its own status, so ineligible players stand out
+  // Multiple named matches, or a named match plus a generic note — show all
   out.className = 'elig-result';
-  out.innerHTML = `${totalMatches} players match "${q}" — confirm which one:<br>` +
+  out.innerHTML = `${totalNamedMatches} player${totalNamedMatches === 1 ? '' : 's'} found for "${q}":<br>` +
     lines.map(l => `&nbsp;&nbsp;<span style="color:${colorFor(l.status)}">${l.text}</span>`).join('<br>');
 }
 
