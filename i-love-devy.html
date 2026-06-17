@@ -41,53 +41,48 @@
   .hdr {
     background: var(--s1);
     border-bottom: 1px solid var(--br);
-    padding: 14px 24px;
+    padding: 12px 24px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    gap: 14px;
     position: sticky;
     top: 0;
     z-index: 100;
   }
-  .hdr-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .hdr-rows {
+    flex: 1;
     min-width: 0;
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
-  .hdr-right {
+  .hdr-row1, .hdr-row2 {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    flex-shrink: 0;
   }
-  .hdr-title {
-    flex: 1;
-    line-height: 1.25;
-  }
-  .hdr-title .app-name {
-    font-size: 18px;
+  .app-name {
+    font-size: 17px;
     font-weight: 500;
     letter-spacing: -.01em;
     color: #a5b4fc;
-    display: block;
+    white-space: nowrap;
   }
-  .hdr-title .league-sub {
+  .league-sub {
     font-size: 11px;
     font-weight: 600;
     color: var(--tx);
     letter-spacing: .04em;
     text-transform: uppercase;
-    display: block;
-    margin-top: 1px;
     opacity: .85;
+    white-space: nowrap;
   }
   .hdr-status {
     font-size: 11px;
     color: var(--mu);
     font-family: var(--mono);
+    white-space: nowrap;
   }
   .hdr-status.live { color: var(--rb); }
 
