@@ -993,19 +993,13 @@ async function doEligCheck() {
     return;
   }
 
-  // Step 1: Check owned
-  const owned = DATA.devyRows.find(r =>
+  // Gather owned matches
+  const ownedMatches = DATA.devyRows.filter(r =>
     r.playerName.toLowerCase().includes(q) ||
     r.devyPlayer.toLowerCase().includes(q)
   );
-  if (owned) {
-    out.className = 'elig-result owned';
-    const pickStr = owned.yearPick ? `  —  Drafted ${owned.yearPick}` : '';
-    out.textContent = `👤 Owned by ${owned.owner}${pickStr}`;
-    return;
-  }
 
-  // Step 2: Check eligibility (load ESPN on demand)
+  // Load ESPN on demand (needed regardless of owned matches, to catch same-name different-player cases)
   if (!DATA.espnRows) {
     out.className = 'elig-result unknown';
     out.innerHTML = '<span class="spin"></span> Checking eligibility data…';
@@ -1013,29 +1007,56 @@ async function doEligCheck() {
   }
 
   const curYear = new Date().getFullYear();
-  const espnMatch = DATA.espnRows.find(cols => {
+  const ownedNames = new Set(ownedMatches.map(o => normName(o.playerName)));
+
+  // ESPN matches that are NOT already in the owned list (avoid double-counting same player)
+  const espnMatches = DATA.espnRows.filter(cols => {
     const name = gc(COL.e_name, cols);
-    return name.toLowerCase().includes(q);
+    if (!name.toLowerCase().includes(q)) return false;
+    return !ownedNames.has(normName(name));
   });
 
-  if (espnMatch) {
-    const enrollYear = parseInt(gc(COL.e_enrollYear, espnMatch)) || 0;
-    const ineligible = enrollYear > curYear - CFG.eligYears;
-    if (ineligible) {
-      out.className = 'elig-result inelig';
-      out.textContent = `⚠ Ineligible this season — class of ${enrollYear} (must have played at least 1 college season)`;
-      return;
-    }
-  }
+  const totalMatches = ownedMatches.length + espnMatches.length;
 
-  // Step 3: Appears available
-  if (espnMatch) {
-    out.className = 'elig-result avail';
-    out.textContent = `✓ Appears available — not owned, no eligibility issues found`;
-  } else {
+  // No matches anywhere
+  if (totalMatches === 0) {
     out.className = 'elig-result unknown';
     out.textContent = `⚠ Not found in our reference data — verify before picking`;
+    return;
   }
+
+  // Build unified status lines for every distinct match
+  const lines = [];
+
+  ownedMatches.forEach(o => {
+    const pickStr = o.yearPick ? `  —  Drafted ${o.yearPick}` : '';
+    lines.push(`👤 ${o.playerName} — Owned by ${o.owner}${pickStr}`);
+  });
+
+  espnMatches.forEach(m => {
+    const name = gc(COL.e_name, m);
+    const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
+    const ineligible = enrollYear > curYear - CFG.eligYears;
+    if (ineligible) {
+      lines.push(`⚠ ${name} — Ineligible this season (class of ${enrollYear})`);
+    } else {
+      lines.push(`✓ ${name} — Appears available, no eligibility issues found`);
+    }
+  });
+
+  // Single match — show plainly without "multiple matches" framing
+  if (totalMatches === 1) {
+    const isOwned = ownedMatches.length === 1;
+    const isIneligible = lines[0].startsWith('⚠') && espnMatches.length === 1;
+    out.className = isOwned ? 'elig-result owned' : isIneligible ? 'elig-result inelig' : 'elig-result avail';
+    out.textContent = lines[0];
+    return;
+  }
+
+  // Multiple distinct matches — show all so the person can tell players apart
+  out.className = 'elig-result unknown';
+  out.innerHTML = `${totalMatches} players match "${q}" — confirm which one:<br>` +
+    lines.map(l => `&nbsp;&nbsp;${l}`).join('<br>');
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
