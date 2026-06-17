@@ -44,10 +44,24 @@
     padding: 14px 24px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
     position: sticky;
     top: 0;
     z-index: 100;
+  }
+  .hdr-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+  }
+  .hdr-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
   }
   .hdr-title {
     flex: 1;
@@ -310,7 +324,17 @@
       margin-left: 0;
       text-align: right;
     }
-    .hdr { padding: 12px 16px; gap: 10px; }
+    .hdr {
+      padding: 12px 16px;
+      gap: 8px;
+    }
+    .hdr-status {
+      font-size: 10px;
+    }
+    .btn-refresh {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
     .page { padding: 16px; }
     .elig-card { padding: 12px; }
   }
@@ -319,22 +343,26 @@
 <body>
 
 <div class="hdr">
-  <svg width="44" height="44" viewBox="0 0 280 280" style="flex-shrink:0">
-    <rect x="20" y="10" width="240" height="240" rx="24" fill="#0d0f14"/>
-    <path d="M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z" fill="#6366f1"/>
-    <path d="M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z" fill="#0d0f14"/>
-    <line x1="99" y1="109" x2="136" y2="109" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
-    <line x1="99" y1="130" x2="136" y2="130" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
-    <line x1="99" y1="151" x2="136" y2="151" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
-  </svg>
-  <div class="hdr-title">
-    <span class="app-name">Devy Tracker</span>
-    <span class="league-sub">I Love Devy IDP</span>
+  <div class="hdr-left">
+    <svg width="44" height="44" viewBox="0 0 280 280" style="flex-shrink:0">
+      <rect x="20" y="10" width="240" height="240" rx="24" fill="#0d0f14"/>
+      <path d="M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z" fill="#6366f1"/>
+      <path d="M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z" fill="#0d0f14"/>
+      <line x1="99" y1="109" x2="136" y2="109" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+      <line x1="99" y1="130" x2="136" y2="130" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+      <line x1="99" y1="151" x2="136" y2="151" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title">
+      <span class="app-name">Devy Tracker</span>
+      <span class="league-sub">I Love Devy IDP</span>
+    </div>
   </div>
-  <div class="hdr-status" id="status">Not loaded</div>
-  <button class="btn-refresh" id="btn-refresh" onclick="refresh()">
-    <span id="refresh-icon">↻</span> Refresh
-  </button>
+  <div class="hdr-right">
+    <div class="hdr-status" id="status">Not loaded</div>
+    <button class="btn-refresh" id="btn-refresh" onclick="refresh()">
+      <span id="refresh-icon">↻</span> Refresh
+    </button>
+  </div>
 </div>
 
 <div class="tabs">
