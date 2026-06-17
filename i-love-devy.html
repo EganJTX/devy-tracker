@@ -1058,6 +1058,7 @@ async function doEligCheck() {
     out.style.color = 'var(--mu2)';
     out.innerHTML = '<span class="spin"></span> Checking eligibility data…';
     DATA.espnRows = await fetchCSV(CFG.espnUrl, true);
+    out.style.color = ''; // clear inline override before final result is rendered
   }
 
   const curYear = new Date().getFullYear();
