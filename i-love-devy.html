@@ -294,6 +294,26 @@
     border-radius: 4px;
     font-family: var(--mono);
   }
+
+  /* ── Mobile breakpoint ── */
+  @media (max-width: 640px) {
+    .hide-mobile { display: none !important; }
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters .fi {
+      width: 100%;
+      min-width: 0;
+    }
+    .fi-count {
+      margin-left: 0;
+      text-align: right;
+    }
+    .hdr { padding: 12px 16px; gap: 10px; }
+    .page { padding: 16px; }
+    .elig-card { padding: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -336,12 +356,12 @@
 
   <div class="filters">
     <input class="fi" id="f-name" placeholder="Filter by player name…" oninput="renderDevy()">
-    <select class="fi" id="f-pos" onchange="renderDevy()">
+    <select class="fi hide-mobile" id="f-pos" onchange="renderDevy()">
       <option value="">All positions</option>
       <option>QB</option><option>RB</option><option>WR</option><option>TE</option>
       <option>DL</option><option>LB</option><option>DB</option>
     </select>
-    <select class="fi" id="f-school" onchange="renderDevy()">
+    <select class="fi hide-mobile" id="f-school" onchange="renderDevy()">
       <option value="">All schools</option>
     </select>
     <select class="fi" id="f-owner" onchange="renderDevy()">
@@ -356,10 +376,10 @@
         <tr>
           <th onclick="sortDevy('playerName')">Player</th>
           <th onclick="sortDevy('pos')">Pos</th>
-          <th onclick="sortDevy('school')">School</th>
+          <th onclick="sortDevy('school')" class="hide-mobile">School</th>
           <th onclick="sortDevy('owner')">Owner</th>
-          <th>Pick</th>
-          <th>Placeholder</th>
+          <th class="hide-mobile">Pick</th>
+          <th class="hide-mobile">Placeholder</th>
         </tr>
       </thead>
       <tbody id="tbody-devy">
@@ -377,10 +397,10 @@
     <select class="fi" id="d-year" onchange="renderDraft()">
       <option value="">All years</option>
     </select>
-    <select class="fi" id="d-owner" onchange="renderDraft()">
+    <select class="fi hide-mobile" id="d-owner" onchange="renderDraft()">
       <option value="">All owners</option>
     </select>
-    <select class="fi" id="d-type" onchange="renderDraft()">
+    <select class="fi hide-mobile" id="d-type" onchange="renderDraft()">
       <option value="">All types</option>
       <option value="devy-all">Devy (All)</option>
       <option value="devy-cur">Devy (Current)</option>
@@ -397,9 +417,9 @@
           <th onclick="sortDraft('pick')">Pick</th>
           <th onclick="sortDraft('player')">Player</th>
           <th onclick="sortDraft('pos')">Pos</th>
-          <th onclick="sortDraft('school')">School / Team</th>
+          <th onclick="sortDraft('school')" class="hide-mobile">School / Team</th>
           <th onclick="sortDraft('owner')">Owner</th>
-          <th>Type</th>
+          <th class="hide-mobile">Type</th>
         </tr>
       </thead>
       <tbody id="tbody-draft">
@@ -414,10 +434,10 @@
 
   <div class="filters">
     <input class="fi" id="dr-name" placeholder="Filter by player…" oninput="renderDropped()">
-    <select class="fi" id="dr-school" onchange="renderDropped()">
+    <select class="fi hide-mobile" id="dr-school" onchange="renderDropped()">
       <option value="">All schools</option>
     </select>
-    <select class="fi" id="dr-year" onchange="renderDropped()">
+    <select class="fi hide-mobile" id="dr-year" onchange="renderDropped()">
       <option value="">All years</option>
     </select>
     <div class="fi-count" id="dropped-count"></div>
@@ -427,10 +447,10 @@
     <table>
       <thead>
         <tr>
-          <th>Pick</th>
+          <th class="hide-mobile">Pick</th>
           <th>Player</th>
           <th>Pos</th>
-          <th>School</th>
+          <th class="hide-mobile">School</th>
           <th>Owner</th>
         </tr>
       </thead>
@@ -735,14 +755,14 @@ function renderDevy() {
     <tr>
       <td><strong>${r.playerName}</strong></td>
       <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
-      <td>
+      <td class="hide-mobile">
         ${r.school
-          ? `<span style="font-size:12px;font-weight:600;color:${r.type === 'NFL' ? '#6ee7b7' : '#a5b4fc'}">${r.school}</span>`
+          ? `<span style="font-size:12px;font-weight:600;color:#a5b4fc">${r.school}</span>`
           : '<span style="color:var(--mu)">—</span>'}
       </td>
       <td><span class="owner-pill">${r.owner}</span></td>
-      <td><span class="year-badge">${r.yearPick || '—'}</span></td>
-      <td style="color:var(--mu);font-size:12px;font-family:var(--mono)">${r.placeholder || '—'}</td>
+      <td class="hide-mobile"><span class="year-badge">${r.yearPick || '—'}</span></td>
+      <td class="hide-mobile" style="color:var(--mu);font-size:12px;font-family:var(--mono)">${r.placeholder || '—'}</td>
     </tr>
   `).join('');
 }
@@ -927,7 +947,7 @@ if (type === 'devy-all' && !isDevy(r))    return false;
         ${r.tradedTo ? '<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 5px;border-radius:3px;background:rgba(234,179,8,.12);color:var(--warn);margin-left:6px">TRADED</span>' : ''}
       </td>
       <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
-      <td>
+      <td class="hide-mobile">
         ${r.school
           ? `<span style="font-size:12px;font-weight:600;color:${r.type === 'NFL' ? '#6ee7b7' : '#a5b4fc'}">${r.school}</span>`
           : '<span style="color:var(--mu)">—</span>'}
@@ -936,7 +956,7 @@ if (type === 'devy-all' && !isDevy(r))    return false;
         <span class="owner-pill">${r.owner}</span>
         ${r.tradedTo ? `<div style="font-size:11px;color:var(--warn);margin-top:2px">→ ${r.tradedTo}</div>` : ''}
       </td>
-      <td><span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:var(--mono);${pillStyle(r.type)}">${pillLabel(r.type)}</span></td>
+      <td class="hide-mobile"><span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:var(--mono);${pillStyle(r.type)}">${pillLabel(r.type)}</span></td>
     </tr>`;
   }).join('');
 }
@@ -964,15 +984,15 @@ function renderDropped() {
 
   tbody.innerHTML = rows.map(r => `
     <tr>
-      <td><span class="year-badge">${r.yearPick || '—'}</span></td>
+      <td class="hide-mobile"><span class="year-badge">${r.yearPick || '—'}</span></td>
       <td>
         <strong>${r.playerName}</strong>
         <span class="dropped-badge" style="margin-left:8px">DROPPED</span>
       </td>
       <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
-      <td>
+      <td class="hide-mobile">
         ${r.school
-          ? `<span style="font-size:12px;font-weight:600;color:${r.type === 'NFL' ? '#6ee7b7' : '#a5b4fc'}">${r.school}</span>`
+          ? `<span style="font-size:12px;font-weight:600;color:#a5b4fc">${r.school}</span>`
           : '<span style="color:var(--mu)">—</span>'}
       </td>
       <td><span class="owner-pill">${r.owner || 'Unknown'}</span></td>
