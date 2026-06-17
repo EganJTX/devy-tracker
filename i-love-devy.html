@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Devy Tracker — I Love Devy IDP</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280"><rect x="20" y="10" width="240" height="240" rx="24" fill="%236366f1"/><path d="M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z" fill="%230d0f14"/><path d="M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z" fill="%236366f1"/><line x1="99" y1="109" x2="136" y2="109" stroke="%230d0f14" stroke-width="5" stroke-linecap="round"/><line x1="99" y1="130" x2="136" y2="130" stroke="%230d0f14" stroke-width="5" stroke-linecap="round"/><line x1="99" y1="151" x2="136" y2="151" stroke="%230d0f14" stroke-width="5" stroke-linecap="round"/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 280'><rect x='20' y='10' width='240' height='240' rx='24' fill='%236366f1'/><path d='M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z' fill='%230d0f14'/><path d='M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z' fill='%236366f1'/><line x1='99' y1='109' x2='136' y2='109' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/><line x1='99' y1='130' x2='136' y2='130' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/><line x1='99' y1='151' x2='136' y2='151' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/></svg>">
 <style>
   /* ── Tokens ── */
   :root {
@@ -49,19 +49,25 @@
     z-index: 100;
   }
   .hdr-title {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -.01em;
-    color: var(--tx);
     flex: 1;
+    line-height: 1.25;
   }
-  .hdr-title span {
-    color: var(--ac2);
-    font-family: var(--mono);
+  .hdr-title .app-name {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+    color: #a5b4fc;
+    display: block;
+  }
+  .hdr-title .league-sub {
     font-size: 11px;
-    font-weight: 400;
-    margin-left: 8px;
-    letter-spacing: .05em;
+    font-weight: 600;
+    color: var(--tx);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 1px;
+    opacity: .85;
   }
   .hdr-status {
     font-size: 11px;
@@ -290,7 +296,7 @@
 <body>
 
 <div class="hdr">
-  <svg width="40" height="40" viewBox="0 0 280 280" style="flex-shrink:0">
+  <svg width="44" height="44" viewBox="0 0 280 280" style="flex-shrink:0">
     <rect x="20" y="10" width="240" height="240" rx="24" fill="#0d0f14"/>
     <path d="M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z" fill="#6366f1"/>
     <path d="M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z" fill="#0d0f14"/>
@@ -299,8 +305,8 @@
     <line x1="99" y1="151" x2="136" y2="151" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
   </svg>
   <div class="hdr-title">
-    <span style="color:var(--ac2)">Devy Tracker</span>
-    <span style="color:var(--tx);font-weight:400">— I Love Devy IDP</span>
+    <span class="app-name">Devy Tracker</span>
+    <span class="league-sub">I Love Devy IDP</span>
   </div>
   <div class="hdr-status" id="status">Not loaded</div>
   <button class="btn-refresh" id="btn-refresh" onclick="refresh()">
