@@ -19,7 +19,8 @@
     --mu2:   #9ca3af;
     --ac:    #6366f1;   /* indigo — dynasty feel */
     --ac2:   #a5b4fc;
-    --rb:    #34d399;   /* available green */
+    --rb:    #34d399;   /* unused — kept for badge palette elsewhere */
+    --maybe: #60a5fa;   /* maybe / verify yourself — informational blue */
     --err:   #f87171;   /* ineligible red */
     --warn:  #fbbf24;   /* caution amber */
     --font:  'Inter', system-ui, sans-serif;
@@ -242,8 +243,7 @@
   }
   .elig-result.owned    { color: var(--warn); }
   .elig-result.inelig   { color: var(--err); }
-  .elig-result.avail    { color: var(--rb); }
-  .elig-result.unknown  { color: var(--mu2); }
+  .elig-result.maybe    { color: var(--maybe); }
 
   /* ── Empty state ── */
   .empty {
@@ -351,7 +351,7 @@
     <div class="elig-row">
       <input class="elig-input" id="elig-input" placeholder="Search by name (e.g. Iamaleava)…" oninput="eligCheck()">
     </div>
-    <div class="elig-result unknown" id="elig-result">Enter a player name to check ownership and eligibility.</div>
+    <div class="elig-result" id="elig-result" style="color:var(--mu2)">Enter a player name to check ownership and eligibility.</div>
   </div>
 
   <div class="filters">
@@ -1011,7 +1011,8 @@ async function doEligCheck() {
   const q   = (document.getElementById('elig-input')?.value || '').trim().toLowerCase();
   const out = document.getElementById('elig-result');
   if (q.length < 2) {
-    out.className = 'elig-result unknown';
+    out.className = 'elig-result';
+    out.style.color = 'var(--mu2)';
     out.textContent = 'Enter a player name to check ownership and eligibility.';
     return;
   }
@@ -1024,7 +1025,8 @@ async function doEligCheck() {
 
   // Load ESPN on demand (needed regardless of owned matches, to catch same-name different-player cases)
   if (!DATA.espnRows) {
-    out.className = 'elig-result unknown';
+    out.className = 'elig-result';
+    out.style.color = 'var(--mu2)';
     out.innerHTML = '<span class="spin"></span> Checking eligibility data…';
     DATA.espnRows = await fetchCSV(CFG.espnUrl, true);
   }
@@ -1043,13 +1045,13 @@ async function doEligCheck() {
 
   // No matches anywhere
   if (totalMatches === 0) {
-    out.className = 'elig-result unknown';
-    out.textContent = `⚠ Not found in our reference data — verify before picking`;
+    out.className = 'elig-result maybe';
+    out.textContent = `Not found in our reference data — verify before picking`;
     return;
   }
 
   // Build unified status lines for every distinct match — each tagged with its own status
-  const lines = []; // { text, status: 'owned'|'inelig'|'avail' }
+  const lines = []; // { text, status: 'owned'|'inelig'|'maybe' }
 
   ownedMatches.forEach(o => {
     const pickStr = o.yearPick ? `  —  Drafted ${o.yearPick}` : '';
@@ -1063,14 +1065,14 @@ async function doEligCheck() {
     if (ineligible) {
       lines.push({ text: `⚠ ${name} — Ineligible this season (class of ${enrollYear})`, status: 'inelig' });
     } else {
-      lines.push({ text: `✓ ${name} — Appears available, no eligibility issues found`, status: 'avail' });
+      lines.push({ text: `${name} — Appears available, please verify`, status: 'maybe' });
     }
   });
 
   const colorFor = status =>
     status === 'owned'  ? 'var(--warn)' :
     status === 'inelig' ? 'var(--err)'  :
-    'var(--rb)';
+    'var(--maybe)';
 
   // Single match — show plainly without "multiple matches" framing
   if (totalMatches === 1) {
@@ -1080,7 +1082,7 @@ async function doEligCheck() {
   }
 
   // Multiple distinct matches — show all, each colored by its own status, so ineligible players stand out
-  out.className = 'elig-result unknown';
+  out.className = 'elig-result';
   out.innerHTML = `${totalMatches} players match "${q}" — confirm which one:<br>` +
     lines.map(l => `&nbsp;&nbsp;<span style="color:${colorFor(l.status)}">${l.text}</span>`).join('<br>');
 }
