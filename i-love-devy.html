@@ -1048,12 +1048,12 @@ async function doEligCheck() {
     return;
   }
 
-  // Build unified status lines for every distinct match
-  const lines = [];
+  // Build unified status lines for every distinct match — each tagged with its own status
+  const lines = []; // { text, status: 'owned'|'inelig'|'avail' }
 
   ownedMatches.forEach(o => {
     const pickStr = o.yearPick ? `  —  Drafted ${o.yearPick}` : '';
-    lines.push(`👤 ${o.playerName} — Owned by ${o.owner}${pickStr}`);
+    lines.push({ text: `👤 ${o.playerName} — Owned by ${o.owner}${pickStr}`, status: 'owned' });
   });
 
   espnMatches.forEach(m => {
@@ -1061,25 +1061,28 @@ async function doEligCheck() {
     const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
     const ineligible = enrollYear > curYear - CFG.eligYears;
     if (ineligible) {
-      lines.push(`⚠ ${name} — Ineligible this season (class of ${enrollYear})`);
+      lines.push({ text: `⚠ ${name} — Ineligible this season (class of ${enrollYear})`, status: 'inelig' });
     } else {
-      lines.push(`✓ ${name} — Appears available, no eligibility issues found`);
+      lines.push({ text: `✓ ${name} — Appears available, no eligibility issues found`, status: 'avail' });
     }
   });
 
+  const colorFor = status =>
+    status === 'owned'  ? 'var(--warn)' :
+    status === 'inelig' ? 'var(--err)'  :
+    'var(--rb)';
+
   // Single match — show plainly without "multiple matches" framing
   if (totalMatches === 1) {
-    const isOwned = ownedMatches.length === 1;
-    const isIneligible = lines[0].startsWith('⚠') && espnMatches.length === 1;
-    out.className = isOwned ? 'elig-result owned' : isIneligible ? 'elig-result inelig' : 'elig-result avail';
-    out.textContent = lines[0];
+    out.className = 'elig-result ' + lines[0].status;
+    out.textContent = lines[0].text;
     return;
   }
 
-  // Multiple distinct matches — show all so the person can tell players apart
+  // Multiple distinct matches — show all, each colored by its own status, so ineligible players stand out
   out.className = 'elig-result unknown';
   out.innerHTML = `${totalMatches} players match "${q}" — confirm which one:<br>` +
-    lines.map(l => `&nbsp;&nbsp;${l}`).join('<br>');
+    lines.map(l => `&nbsp;&nbsp;<span style="color:${colorFor(l.status)}">${l.text}</span>`).join('<br>');
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
