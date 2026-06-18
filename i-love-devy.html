@@ -304,6 +304,92 @@
     font-family: var(--mono);
   }
 
+  /* ── Owner Rosters: KPI strip ── */
+  .kpi-strip {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .kpi-card {
+    background: var(--s2);
+    border: 1px solid var(--br2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 140px;
+    flex: 1;
+    text-align: center;
+  }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mu);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--tx);
+  }
+
+  /* ── Owner Rosters: table + accordion ── */
+  #tbl-owners tbody tr.owner-row {
+    cursor: pointer;
+  }
+  .owner-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .owner-caret {
+    color: var(--mu);
+    font-size: 11px;
+    display: inline-block;
+    transition: transform .15s;
+  }
+  .owner-caret.open { transform: rotate(90deg); }
+  .devy-pill {
+    display: inline-block;
+    font-weight: 700;
+    font-family: var(--mono);
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 13px;
+  }
+  .devy-pill.ok   { background: rgba(52,211,153,.12); color: var(--rb); }
+  .devy-pill.near { background: rgba(251,191,36,.15); color: var(--warn); }
+  .devy-pill.over { background: rgba(248,113,113,.15); color: var(--err); }
+  .cap-val { color: var(--mu2); font-family: var(--mono); }
+  .owner-accordion-row { background: var(--s1); }
+  .owner-accordion-inner { padding: 14px 24px 18px 40px; }
+  .owner-acc-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--mu);
+    margin-bottom: 10px;
+  }
+  .devy-list-table { width: auto; min-width: 360px; border-collapse: collapse; }
+  .devy-list-table thead th {
+    font-size: 10px;
+    padding: 5px 16px 5px 0;
+    text-align: left;
+    color: var(--mu);
+    border-bottom: 1px solid var(--br2);
+  }
+  .devy-list-table tbody td {
+    padding: 6px 16px 6px 0;
+    font-size: 13px;
+    color: var(--tx);
+  }
+  .devy-list-table tbody td:last-child { color: var(--mu); font-family: var(--mono); font-size: 11px; }
+  .devy-list-table tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+
   /* ── Mobile breakpoint ── */
   @media (max-width: 640px) {
     .hide-mobile { display: none !important; }
@@ -367,7 +453,8 @@
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('devy')">Devy Roster</div>
+  <div class="tab active" onclick="switchTab('devy')">Devy Data</div>
+  <div class="tab" onclick="switchTab('owners')">Owner Rosters</div>
   <div class="tab" onclick="switchTab('draft')">Draft Board</div>
   <div class="tab" onclick="switchTab('dropped')">Dropped Players</div>
 </div>
@@ -490,11 +577,35 @@
   </div>
 </div>
 
+<!-- ── OWNER ROSTERS ── -->
+<div class="page" id="page-owners">
+
+  <div class="kpi-strip" id="owner-kpi-strip"></div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-owners">
+      <thead>
+        <tr>
+          <th>Owner</th>
+          <th>Total Players</th>
+          <th>Vets &amp; Rookies</th>
+          <th>Devys</th>
+          <th>Devy Cap</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-owners">
+        <tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 // ── Config ───────────────────────────────────────────────────────────────────
 const CFG = {
   leagueId:    '1315391534039846912',
   eligYears:   1,
+  devyCap:     0,  // 0 = no cap. Ultimate Devy will set this to 20.
   importUrl:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrEYksXRWs-TiyKMufcmv7Lasf6UX2R1MbuqahGyzAT61roOetf68pXjFt4A769BNivothz2_AxO8m/pub?gid=2053441686&single=true&output=csv',
   droppedUrl:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQJfdLKqZUWlIl2Q4zLBzxuMJwxyPYUu7xrrwJxd_CwHBsWY1sIne7ghVWjJoTtBcMUVVMI3kcdl_0h/pub?gid=721404697&single=true&output=csv',
   espnUrl:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrEYksXRWs-TiyKMufcmv7Lasf6UX2R1MbuqahGyzAT61roOetf68pXjFt4A769BNivothz2_AxO8m/pub?gid=932692027&single=true&output=csv',
@@ -530,6 +641,7 @@ let DATA = {
   sleeperPicks: [],  // processed picks (built in renderDraft)
   rawSleeperPicks: [], // raw from Sleeper API
   sleeperUserMap: {}, // userId → displayName
+  rosters:     [],   // raw Sleeper rosters — owner_id, players[]
   droppedRows: [],   // from Dropped sheet
   espnRows:    null, // loaded on demand
   loadedAt:    null,
@@ -684,6 +796,15 @@ async function refresh() {
       console.log('[refresh] raw picks fetched:', DATA.rawSleeperPicks.length);
     } catch(e) { console.warn('Sleeper fetch failed:', e.message); }
 
+    // 4. Current rosters — needed for Owner Rosters tab. Player DB not required;
+    //    vet/rookie count is derived as remainder (total roster size minus devys).
+    DATA.rosters = [];
+    try {
+      const rostersRes = await fetch(`${CFG.sleeperApi}/league/${CFG.leagueId}/rosters`);
+      DATA.rosters = await rostersRes.json() || [];
+      console.log('[refresh] rosters fetched:', DATA.rosters.length);
+    } catch(e) { console.warn('Rosters fetch failed:', e.message); }
+
     DATA.loadedAt = new Date();
     DATA.espnRows = null; // reset eligibility cache on refresh
 
@@ -691,6 +812,7 @@ async function refresh() {
     renderDevy();
     renderDraft();
     renderDropped();
+    renderOwnerRosters();
     setStatus('Updated ' + DATA.loadedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), true);
   } catch(e) {
     setStatus('Load failed — try again');
@@ -1029,7 +1151,145 @@ function renderDropped() {
   `).join('');
 }
 
-// ── ELIGIBILITY CHECK ─────────────────────────────────────────────────────────
+// ── OWNER ROSTERS ─────────────────────────────────────────────────────────────
+let expandedOwner = null; // tracks which owner row is currently expanded
+
+function renderOwnerRosters() {
+  const stripEl  = document.getElementById('owner-kpi-strip');
+  const tbody    = document.getElementById('tbody-owners');
+  if (!DATA.rosters?.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>`;
+    stripEl.innerHTML = '';
+    return;
+  }
+
+  // Build per-owner devy lists from Import sheet (only currently-owned devys, not in Sleeper as real NFL players)
+  const devysByOwner = {}; // ownerHandle → [{ playerName, pos, school, yearPick }]
+  DATA.devyRows.forEach(r => {
+    if (r.inSleeper) return; // already in NFL, not a current devy holding
+    if (!devysByOwner[r.owner]) devysByOwner[r.owner] = [];
+    devysByOwner[r.owner].push(r);
+  });
+
+  // Build per-roster counts: total comes straight from Sleeper roster size,
+  // devys come from Import sheet, vets+rookies is just the remainder — no player DB needed.
+  const rosterStats = DATA.rosters.map(roster => {
+    const ownerHandle = DATA.sleeperUserMap[roster.owner_id] || 'Unknown';
+    const total      = (roster.players || []).length;
+    const devyCount  = (devysByOwner[ownerHandle] || []).length;
+    const others     = Math.max(0, total - devyCount); // vets + rookies combined
+    return {
+      owner: ownerHandle,
+      others,
+      devys: devyCount,
+      total,
+    };
+  }).sort((a, b) => a.owner.localeCompare(b.owner));
+
+  // ── KPI calculations ──
+  const totalDevys     = rosterStats.reduce((s, r) => s + r.devys, 0);
+  const totalPlayers   = rosterStats.reduce((s, r) => s + r.total, 0);
+  const pctDevy        = totalPlayers > 0 ? (totalDevys / totalPlayers * 100) : 0;
+  const avgDevys       = rosterStats.length > 0 ? (totalDevys / rosterStats.length) : 0;
+  const devyCap        = CFG.devyCap || 0;
+  const ownersAtOrOver = devyCap > 0 ? rosterStats.filter(r => r.devys >= devyCap).length : null;
+
+  stripEl.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Devys Rostered</div>
+      <div class="kpi-value">${totalDevys}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">% Rosters Devy</div>
+      <div class="kpi-value">${pctDevy.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Devys Per Roster</div>
+      <div class="kpi-value">${avgDevys.toFixed(1)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Owners At/Over Cap</div>
+      <div class="kpi-value">${devyCap > 0 ? ownersAtOrOver : '—'}</div>
+    </div>
+  `;
+
+  // ── Table rows + accordion ──
+  tbody.innerHTML = rosterStats.map(r => {
+    const devyClass = devyCap > 0
+      ? (r.devys >= devyCap ? 'over' : r.devys >= devyCap - 2 ? 'near' : 'ok')
+      : '';
+    const devyPillHtml = devyCap > 0
+      ? `<span class="devy-pill ${devyClass}">${r.devys}</span>`
+      : `<span class="count">${r.devys}</span>`;
+    const capValHtml = devyCap > 0 ? devyCap : '—';
+
+    return `
+      <tr class="owner-row" onclick="toggleOwnerAccordion('${r.owner.replace(/'/g,"\\'")}')">
+        <td class="owner-name-cell"><span class="owner-caret" id="caret-${cssSafe(r.owner)}">▶</span> ${r.owner}</td>
+        <td><span class="count">${r.total}</span></td>
+        <td><span class="count">${r.others}</span></td>
+        <td>${devyPillHtml}</td>
+        <td><span class="cap-val">${capValHtml}</span></td>
+      </tr>
+      <tr class="owner-accordion-row" id="accordion-${cssSafe(r.owner)}" style="display:none">
+        <td colspan="5">
+          <div class="owner-accordion-inner">
+            <div class="owner-acc-label">Devys (${r.devys})</div>
+            ${buildDevyListTable(devysByOwner[r.owner] || [])}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function cssSafe(s) {
+  return (s || '').replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function buildDevyListTable(devys) {
+  if (!devys.length) {
+    return '<div style="font-size:12px;color:var(--mu)">No current devy holdings.</div>';
+  }
+  const sorted = [...devys].sort((a, b) => a.playerName.localeCompare(b.playerName));
+  return `
+    <table class="devy-list-table">
+      <thead><tr><th>Player</th><th>Pos</th><th>School</th><th>Drafted</th></tr></thead>
+      <tbody>
+        ${sorted.map(d => `
+          <tr>
+            <td>${d.playerName}</td>
+            <td><span class="badge ${d.pos || 'pos'}">${d.pos || '—'}</span></td>
+            <td style="color:var(--mu2)">${d.school || '—'}</td>
+            <td>${d.yearPick || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function toggleOwnerAccordion(owner) {
+  const key      = cssSafe(owner);
+  const row      = document.getElementById('accordion-' + key);
+  const caret    = document.getElementById('caret-' + key);
+  const isOpen   = row.style.display !== 'none';
+
+  // Close any other open accordion first
+  if (expandedOwner && expandedOwner !== owner) {
+    const prevKey = cssSafe(expandedOwner);
+    const prevRow = document.getElementById('accordion-' + prevKey);
+    const prevCaret = document.getElementById('caret-' + prevKey);
+    if (prevRow) prevRow.style.display = 'none';
+    if (prevCaret) prevCaret.classList.remove('open');
+  }
+
+  row.style.display = isOpen ? 'none' : 'table-row';
+  caret.classList.toggle('open', !isOpen);
+  expandedOwner = isOpen ? null : owner;
+}
+
+
 let eligDebounce = null;
 function eligCheck() {
   clearTimeout(eligDebounce);
@@ -1131,11 +1391,12 @@ async function doEligCheck() {
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.tab').forEach((el, i) => {
-    el.classList.toggle('active', ['devy','draft','dropped'][i] === tab);
+    el.classList.toggle('active', ['devy','owners','draft','dropped'][i] === tab);
   });
   document.querySelectorAll('.page').forEach(el => {
     el.classList.toggle('active', el.id === 'page-' + tab);
   });
+  if (tab === 'owners') renderOwnerRosters();
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
