@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devy Tracker — Ultimate Devy IDP</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 280'><rect x='20' y='10' width='240' height='240' rx='24' fill='%236366f1'/><path d='M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z' fill='%230d0f14'/><path d='M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z' fill='%236366f1'/><line x1='99' y1='109' x2='136' y2='109' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/><line x1='99' y1='130' x2='136' y2='130' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/><line x1='99' y1='151' x2='136' y2='151' stroke='%230d0f14' stroke-width='5' stroke-linecap='round'/></svg>">
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg:    #0d0f14;
+    --s1:    #13161e;
+    --s2:    #1a1e28;
+    --s3:    #22273a;
+    --br:    rgba(255,255,255,.08);
+    --br2:   rgba(255,255,255,.14);
+    --tx:    #e8eaf0;
+    --mu:    #6b7280;
+    --mu2:   #9ca3af;
+    --ac:    #6366f1;   /* indigo — dynasty feel */
+    --ac2:   #a5b4fc;
+    --rb:    #34d399;   /* unused — kept for badge palette elsewhere */
+    --maybe: #60a5fa;   /* maybe / verify yourself — informational blue */
+    --err:   #f87171;   /* ineligible red */
+    --warn:  #fbbf24;   /* caution amber */
+    --font:  'Inter', system-ui, sans-serif;
+    --mono:  'DM Mono', 'Fira Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--tx);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .hdr {
+    background: var(--s1);
+    border-bottom: 1px solid var(--br);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .hdr-rows {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .hdr-row1, .hdr-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .app-name {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+    color: #a5b4fc;
+    white-space: nowrap;
+  }
+  .league-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--tx);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .85;
+    white-space: nowrap;
+  }
+  .hdr-status {
+    font-size: 11px;
+    color: var(--mu);
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+  .hdr-status.live { color: var(--rb); }
+
+  /* ── Refresh button ── */
+  .btn-refresh {
+    background: var(--ac);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity .15s;
+  }
+  .btn-refresh:hover { opacity: .85; }
+  .btn-refresh:disabled { opacity: .4; cursor: default; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 12px 24px 0;
+    border-bottom: 1px solid var(--br);
+    background: var(--s1);
+  }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mu);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s;
+    user-select: none;
+  }
+  .tab.active {
+    color: var(--ac2);
+    border-bottom-color: var(--ac);
+  }
+  .tab:hover:not(.active) { color: var(--tx); }
+
+  /* ── Page containers ── */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* ── Filters bar ── */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .fi {
+    background: var(--s2);
+    border: 1px solid var(--br2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--tx);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    min-width: 160px;
+  }
+  .fi:focus { border-color: var(--ac); }
+  .fi-count {
+    font-size: 12px;
+    color: var(--mu);
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mu);
+    border-bottom: 1px solid var(--br2);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--tx); }
+  thead th.sorted { color: var(--ac2); }
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,.03);
+    transition: background .1s;
+  }
+  tbody tr:hover { background: var(--s2); }
+  td {
+    padding: 9px 12px;
+    vertical-align: middle;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+  .badge.QB { background: rgba(239,68,68,.18);  color: #f87171; }  /* red */
+  .badge.RB { background: rgba(132,204,22,.18);  color: #a3e635; }  /* lime green */
+  .badge.WR { background: rgba(56,189,248,.18);  color: #7dd3fc; }  /* light blue */
+  .badge.TE { background: rgba(251,146,60,.18);  color: #fdba74; }  /* light orange */
+  .badge.DL { background: rgba(194,65,12,.22);   color: #fb923c; }  /* dark orange */
+  .badge.LB { background: rgba(168,85,247,.18);  color: #c4b5fd; }  /* purple */
+  .badge.DB { background: rgba(244,114,182,.18); color: #f9a8d4; }  /* pink */
+  .badge.pos { background: var(--s3); color: var(--mu2); }
+
+  /* ── Eligibility checker ── */
+  .elig-card {
+    background: var(--s2);
+    border: 1px solid var(--br2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .elig-card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--mu2);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .elig-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .elig-input {
+    flex: 1;
+    background: var(--s3);
+    border: 1px solid var(--br2);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--tx);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+    max-width: 300px;
+  }
+  .elig-input:focus { border-color: var(--ac); }
+  .elig-result {
+    margin-top: 10px;
+    font-size: 13px;
+    min-height: 20px;
+  }
+  .elig-result.owned    { color: var(--warn); }
+  .elig-result.inelig   { color: var(--err); }
+  .elig-result.maybe    { color: var(--maybe); }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--mu);
+    font-size: 13px;
+  }
+
+  /* ── Loading spinner ── */
+  .spin {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--br2);
+    border-top-color: var(--ac);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Owner pill ── */
+  .owner-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--s3);
+    color: var(--mu2);
+    font-family: var(--mono);
+  }
+
+  /* ── Year badge ── */
+  .year-badge {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--mu2);
+  }
+
+  /* ── Dropped badge ── */
+  .dropped-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--err);
+    background: rgba(248,113,113,.12);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+  }
+
+  /* ── Owner Rosters: KPI strip ── */
+  .kpi-strip {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .kpi-card {
+    background: var(--s2);
+    border: 1px solid var(--br2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 140px;
+    flex: 1;
+    text-align: center;
+  }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mu);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--tx);
+  }
+
+  /* ── Owner Rosters: table + accordion ── */
+  #tbl-owners tbody tr.owner-row {
+    cursor: pointer;
+  }
+  .owner-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .owner-caret {
+    color: var(--mu);
+    font-size: 11px;
+    display: inline-block;
+    transition: transform .15s;
+  }
+  .owner-caret.open { transform: rotate(90deg); }
+  .devy-pill {
+    display: inline-block;
+    font-weight: 700;
+    font-family: var(--mono);
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 13px;
+  }
+  .devy-pill.ok   { background: rgba(52,211,153,.12); color: var(--rb); }
+  .devy-pill.near { background: rgba(251,191,36,.15); color: var(--warn); }
+  .devy-pill.over { background: rgba(248,113,113,.15); color: var(--err); }
+  .cap-val { color: var(--mu2); font-family: var(--mono); }
+  .owner-accordion-row { background: var(--s1); }
+  .owner-accordion-inner { padding: 20px 32px 24px 56px; }
+  .owner-acc-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--mu);
+    margin-bottom: 10px;
+  }
+  .devy-list-table { width: auto; min-width: 480px; border-collapse: collapse; }
+  .devy-list-table th, .devy-list-table td { padding-right: 28px; }
+  .devy-list-table thead th {
+    font-size: 10px;
+    padding: 5px 16px 5px 0;
+    text-align: left;
+    color: var(--mu);
+    border-bottom: 1px solid var(--br2);
+  }
+  .devy-list-table tbody td {
+    padding: 6px 16px 6px 0;
+    font-size: 13px;
+    color: var(--tx);
+  }
+  .devy-list-table tbody td:last-child { color: var(--mu); font-family: var(--mono); font-size: 11px; }
+  .devy-list-table tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+
+  /* ── Mobile breakpoint ── */
+  @media (max-width: 640px) {
+    .hide-mobile { display: none !important; }
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters .fi {
+      width: 100%;
+      min-width: 0;
+    }
+    .fi-count {
+      margin-left: 0;
+      text-align: right;
+    }
+    .hdr {
+      padding: 10px 14px;
+      gap: 10px;
+    }
+    .app-name {
+      font-size: 15px;
+    }
+    .league-sub {
+      font-size: 10px;
+    }
+    .hdr-status {
+      font-size: 9px;
+    }
+    .btn-refresh {
+      padding: 5px 9px;
+      font-size: 11px;
+    }
+    .page { padding: 16px; }
+    .elig-card { padding: 12px; }
+    .owner-accordion-inner {
+      padding: 14px 12px 16px 16px;
+    }
+    .devy-list-table {
+      min-width: 0;
+      width: 100%;
+    }
+    .devy-list-table th, .devy-list-table td {
+      padding-right: 10px;
+      font-size: 12px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <svg width="44" height="44" viewBox="0 0 280 280" style="flex-shrink:0">
+    <rect x="20" y="10" width="240" height="240" rx="24" fill="#0d0f14"/>
+    <path d="M75,60 L75,200 L105,200 C175,200 212,170 212,130 C212,90 175,60 105,60 Z" fill="#6366f1"/>
+    <path d="M99,87 L99,173 L110,173 C152,173 186,157 186,130 C186,103 152,87 110,87 Z" fill="#0d0f14"/>
+    <line x1="99" y1="109" x2="136" y2="109" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+    <line x1="99" y1="130" x2="136" y2="130" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+    <line x1="99" y1="151" x2="136" y2="151" stroke="#6366f1" stroke-width="5" stroke-linecap="round"/>
+  </svg>
+  <div class="hdr-rows">
+    <div class="hdr-row1">
+      <span class="app-name">Devy Tracker</span>
+      <button class="btn-refresh" id="btn-refresh" onclick="refresh()">
+        <span id="refresh-icon">↻</span> Refresh
+      </button>
+    </div>
+    <div class="hdr-row2">
+      <span class="league-sub">Ultimate Devy IDP</span>
+      <div class="hdr-status" id="status">Not loaded</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('devy')">Devy Data</div>
+  <div class="tab" onclick="switchTab('owners')">Owner Rosters</div>
+  <div class="tab" onclick="switchTab('draft')">Draft Board</div>
+  <div class="tab" onclick="switchTab('dropped')">Dropped Players</div>
+</div>
+
+<!-- ── DEVY ROSTER ── -->
+<div class="page active" id="page-devy">
+
+  <div class="elig-card">
+    <h3>Player Lookup — Ownership &amp; Eligibility</h3>
+    <div class="elig-row">
+      <input class="elig-input" id="elig-input" placeholder="Search by name (e.g. Iamaleava)…" oninput="eligCheck()">
+    </div>
+    <div class="elig-result" id="elig-result" style="color:var(--mu2)">Enter a player name to check ownership and eligibility.</div>
+  </div>
+
+  <div class="filters">
+    <input class="fi" id="f-name" placeholder="Filter by player name…" oninput="renderDevy()">
+    <select class="fi hide-mobile" id="f-pos" onchange="renderDevy()">
+      <option value="">All positions</option>
+      <option>QB</option><option>RB</option><option>WR</option><option>TE</option>
+      <option>DL</option><option>LB</option><option>DB</option>
+    </select>
+    <select class="fi hide-mobile" id="f-school" onchange="renderDevy()">
+      <option value="">All schools</option>
+    </select>
+    <select class="fi" id="f-owner" onchange="renderDevy()">
+      <option value="">All owners</option>
+    </select>
+    <div class="fi-count" id="devy-count"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-devy">
+      <thead>
+        <tr>
+          <th onclick="sortDevy('playerName')">Player</th>
+          <th onclick="sortDevy('pos')">Pos</th>
+          <th onclick="sortDevy('school')" class="hide-mobile">School</th>
+          <th onclick="sortDevy('owner')">Owner</th>
+          <th class="hide-mobile">Pick</th>
+          <th class="hide-mobile">Placeholder</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-devy">
+        <tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── DRAFT BOARD ── -->
+<div class="page" id="page-draft">
+
+  <div class="filters">
+    <input class="fi" id="d-name" placeholder="Filter by player…" oninput="renderDraft()">
+    <select class="fi" id="d-year" onchange="renderDraft()">
+      <option value="">All years</option>
+    </select>
+    <select class="fi hide-mobile" id="d-owner" onchange="renderDraft()">
+      <option value="">All owners</option>
+    </select>
+    <select class="fi hide-mobile" id="d-type" onchange="renderDraft()">
+      <option value="">All types</option>
+      <option value="devy-all">Devy (All)</option>
+      <option value="devy-cur">Devy (Current)</option>
+      <option value="devy-nfl">Devy (NFL)</option>
+      <option value="nfl">NFL only</option>
+    </select>
+    <div class="fi-count" id="draft-count"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-draft">
+      <thead>
+        <tr>
+          <th onclick="sortDraft('pick')">Pick</th>
+          <th onclick="sortDraft('player')">Player</th>
+          <th onclick="sortDraft('pos')">Pos</th>
+          <th onclick="sortDraft('school')" class="hide-mobile">School / Team</th>
+          <th onclick="sortDraft('owner')">Owner</th>
+          <th class="hide-mobile">Type</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-draft">
+        <tr><td colspan="6" class="empty">Hit Refresh to load data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── DROPPED PLAYERS ── -->
+<div class="page" id="page-dropped">
+
+  <div class="filters">
+    <input class="fi" id="dr-name" placeholder="Filter by player…" oninput="renderDropped()">
+    <select class="fi hide-mobile" id="dr-school" onchange="renderDropped()">
+      <option value="">All schools</option>
+    </select>
+    <select class="fi hide-mobile" id="dr-year" onchange="renderDropped()">
+      <option value="">All years</option>
+    </select>
+    <div class="fi-count" id="dropped-count"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="hide-mobile">Pick</th>
+          <th>Player</th>
+          <th>Pos</th>
+          <th class="hide-mobile">School</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-dropped">
+        <tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── OWNER ROSTERS ── -->
+<div class="page" id="page-owners">
+
+  <div class="kpi-strip" id="owner-kpi-strip"></div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-owners">
+      <thead>
+        <tr>
+          <th>Owner</th>
+          <th class="hide-mobile">Total Players</th>
+          <th class="hide-mobile">Vets &amp; Rookies</th>
+          <th>Devys</th>
+          <th>Devy Cap</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-owners">
+        <tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+const CFG = {
+  leagueId:    '1317287804425768960',
+  eligYears:   0,
+  devyCap:     20,
+  importUrl:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcWl1WSTGF47tPiE0GMB1owoF_ehD4CRem-0pUQppGe1KE5CX_tQBXQELIq65VyA/pub?gid=2053441686&single=true&output=csv',
+  droppedUrl:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHLZfxCw0m7A1kv9LRFXp3TirdERGlhGUm6Fn23nClx3Hcm_PuzO9B-P91my_jgglFPit899m-Sq_Z/pub?gid=1532381507&single=true&output=csv',
+  espnUrl:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTrEYksXRWs-TiyKMufcmv7Lasf6UX2R1MbuqahGyzAT61roOetf68pXjFt4A769BNivothz2_AxO8m/pub?gid=932692027&single=true&output=csv',
+  sleeperApi:  'https://api.sleeper.app/v1',
+  proxy:       u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+};
+
+// Column indexes from imports.json mapping
+const COL = {
+  yearPick:    2,
+  devyPlayer:  3,   // "Devy Player" full string col
+  playerName:  4,
+  owner:       7,
+  pos:         5,
+  school:      6,
+  placeholder: 8,
+  inSleeper:   9,
+  // Dropped sheet
+  d_yearPick:  2,
+  d_player:    4,
+  d_owner:     7,
+  d_pos:       5,
+  d_school:    6,
+  // ESPN
+  e_name:      2,
+  e_enrollYear: 10,
+  e_isEligible: 11,
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+let DATA = {
+  devyRows:    [],   // from Import sheet — devy picks
+  sleeperPicks: [],  // processed picks (built in renderDraft)
+  rawSleeperPicks: [], // raw from Sleeper API
+  sleeperUserMap: {}, // userId → displayName
+  rosters:     [],   // raw Sleeper rosters — owner_id, players[]
+  droppedRows: [],   // from Dropped sheet
+  espnRows:    null, // loaded on demand
+  loadedAt:    null,
+};
+let DEVY_SORT  = { col: 'playerName', dir: 1 }; // default alpha by playerName
+let DRAFT_SORT = { col: 'pick', dir: 1 };
+let activeTab  = 'devy';
+
+// ── CSV utilities ─────────────────────────────────────────────────────────────
+async function fetchCSV(url, multiline = false) {
+  // On GitHub Pages (https) direct fetch works fine.
+  // Local file (null origin) needs a proxy.
+  const isLocal = false; // always try direct first — works from localhost and GitHub Pages
+  const proxies = isLocal
+    ? [
+        u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+        u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      ]
+    : [
+        u => u,
+        u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      ];
+  for (const px of proxies) {
+    try {
+      const r = await fetch(px(url), { cache: 'no-store' });
+      if (!r.ok) continue;
+      const t = await r.text();
+      if (!t.includes(',')) continue;
+      const lines = multiline ? splitCSVLines(t) : t.split('\n');
+      return lines.slice(1).map(l => l.trim()).filter(Boolean).map(csvLine);
+    } catch(e) {}
+  }
+  return [];
+}
+
+function splitCSVLines(text) {
+  const lines = []; let cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') { inQ = !inQ; cur += c; }
+    else if (c === '\r') {}
+    else if (c === '\n' && !inQ) { lines.push(cur); cur = ''; }
+    else cur += c;
+    if (cur.length > 10000) { lines.push(cur); cur = ''; inQ = false; }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function csvLine(line) {
+  const cols = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') inQ = !inQ;
+    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+function gc(idx, cols) { return idx >= 0 && idx < cols.length ? (cols[idx] || '').trim() : ''; }
+
+function normName(n) {
+  if (!n) return '';
+  return n.toLowerCase()
+    .replace(/\s+(jr\.?|sr\.?|ii|iii|iv|v)$/i, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// ── Refresh ───────────────────────────────────────────────────────────────────
+async function refresh() {
+  const btn = document.getElementById('btn-refresh');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.innerHTML = '<span class="spin"></span>';
+  setStatus('Loading…');
+
+  try {
+    // 1. Import sheet
+    const importRows = await fetchCSV(CFG.importUrl);
+    DATA.devyRows = importRows
+      .filter(cols => gc(COL.playerName, cols) && gc(COL.owner, cols))
+      .map(cols => ({
+        yearPick:    gc(COL.yearPick,    cols),
+        devyPlayer:  gc(COL.devyPlayer,  cols),
+        playerName:  gc(COL.playerName,  cols),
+        owner:       gc(COL.owner,       cols),
+        pos:         gc(COL.pos,         cols).toUpperCase(),
+        school:      gc(COL.school,      cols),
+        placeholder: gc(COL.placeholder, cols),
+        inSleeper:   gc(COL.inSleeper,   cols).toUpperCase() === 'TRUE',
+      }));
+
+    // 2. Dropped sheet
+    const droppedRows = await fetchCSV(CFG.droppedUrl);
+    DATA.droppedRows = droppedRows
+      .filter(cols => gc(COL.d_player, cols))
+      .map(cols => ({
+        yearPick:   gc(COL.d_yearPick, cols),
+        playerName: gc(COL.d_player,   cols),
+        owner:      gc(COL.d_owner,    cols),
+        pos:        gc(COL.d_pos,      cols).toUpperCase(),
+        school:     gc(COL.d_school,   cols),
+      }));
+
+    // 3. Sleeper picks — chain through all league seasons to get full history
+    DATA.rawSleeperPicks = [];
+    DATA.sleeperUserMap  = {};
+    try {
+      const usersRes = await fetch(`${CFG.sleeperApi}/league/${CFG.leagueId}/users`);
+      const users    = await usersRes.json();
+      users.forEach(u => { DATA.sleeperUserMap[u.user_id] = u.display_name || u.username; });
+
+      const allDrafts = [];
+      let lid = CFG.leagueId;
+      const visited = new Set();
+      while (lid && !visited.has(lid)) {
+        visited.add(lid);
+        const [lgRes, drRes] = await Promise.all([
+          fetch(`${CFG.sleeperApi}/league/${lid}`),
+          fetch(`${CFG.sleeperApi}/league/${lid}/drafts`),
+        ]);
+        const lg     = await lgRes.json();
+        const drafts = await drRes.json();
+        const season = lg?.season || '';
+        for (const dr of (drafts || [])) {
+          if (dr.status === 'complete' || dr.status === 'drafting') {
+            allDrafts.push({ ...dr, _season: season });
+          }
+        }
+        lid = lg?.previous_league_id || null;
+      }
+
+      const pickArrays = await Promise.all(
+        allDrafts.map(dr => fetch(`${CFG.sleeperApi}/draft/${dr.draft_id}/picks`).then(r => r.json()).catch(() => []))
+      );
+
+      allDrafts.forEach((draft, i) => {
+        (pickArrays[i] || []).forEach(p => {
+          const numTeams    = draft.settings?.teams || 16;
+          const slotInRound = p.pick_no - (p.round - 1) * numTeams;
+          DATA.rawSleeperPicks.push({
+            ...p,
+            _season:      draft._season,
+            _numTeams:    numTeams,
+            _slotInRound: slotInRound,
+          });
+        });
+      });
+      console.log('[refresh] raw picks fetched:', DATA.rawSleeperPicks.length);
+    } catch(e) { console.warn('Sleeper fetch failed:', e.message); }
+
+    // 4. Current rosters — needed for Owner Rosters tab. Player DB not required;
+    //    vet/rookie count is derived as remainder (total roster size minus devys).
+    DATA.rosters = [];
+    try {
+      const rostersRes = await fetch(`${CFG.sleeperApi}/league/${CFG.leagueId}/rosters`);
+      DATA.rosters = await rostersRes.json() || [];
+      console.log('[refresh] rosters fetched:', DATA.rosters.length);
+    } catch(e) { console.warn('Rosters fetch failed:', e.message); }
+
+    DATA.loadedAt = new Date();
+    DATA.espnRows = null; // reset eligibility cache on refresh
+
+    populateFilters();
+    renderDevy();
+    renderDraft();
+    renderDropped();
+    renderOwnerRosters();
+    setStatus('Updated ' + DATA.loadedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), true);
+  } catch(e) {
+    setStatus('Load failed — try again');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  icon.textContent = '↻';
+}
+
+// ── Populate filter dropdowns ─────────────────────────────────────────────────
+function populateFilters() {
+  // Schools (devy)
+  const schools = [...new Set(DATA.devyRows.map(r => r.school).filter(Boolean))].sort();
+  const schoolSel = document.getElementById('f-school');
+  schoolSel.innerHTML = '<option value="">All schools</option>' +
+    schools.map(s => `<option>${s}</option>`).join('');
+
+  // Owners (devy)
+  const owners = [...new Set(DATA.devyRows.map(r => r.owner).filter(Boolean))].sort();
+  const ownerSel = document.getElementById('f-owner');
+  ownerSel.innerHTML = '<option value="">All owners</option>' +
+    owners.map(o => `<option>${o}</option>`).join('');
+
+  // Draft years — build from raw picks
+  buildDraftPicks();
+  const years = [...new Set(DATA.sleeperPicks.map(p => p.year).filter(Boolean))].sort().reverse();
+  const maxYear = years[0] || String(new Date().getFullYear());
+  const yearSel = document.getElementById('d-year');
+  yearSel.innerHTML = '<option value="">All years</option>' +
+    years.map(y => `<option ${y === maxYear ? 'selected' : ''}>${y}</option>`).join('');
+
+  // Draft owners
+  const draftOwners = [...new Set(DATA.sleeperPicks.map(p => p.owner).filter(Boolean))].sort();
+  const dOwnerSel = document.getElementById('d-owner');
+  dOwnerSel.innerHTML = '<option value="">All owners</option>' +
+    draftOwners.map(o => `<option>${o}</option>`).join('');
+
+  // Dropped schools
+  const drSchools = [...new Set(DATA.droppedRows.map(r => r.school).filter(Boolean))].sort();
+  const drSchoolSel = document.getElementById('dr-school');
+  drSchoolSel.innerHTML = '<option value="">All schools</option>' +
+    drSchools.map(s => `<option>${s}</option>`).join('');
+
+  // Dropped years
+  const drYears = [...new Set(DATA.droppedRows.map(r => r.yearPick?.split('.')?.[0]).filter(Boolean))].sort().reverse();
+  const drYearSel = document.getElementById('dr-year');
+  drYearSel.innerHTML = '<option value="">All years</option>' +
+    drYears.map(y => `<option>${y}</option>`).join('');
+}
+
+// ── DEVY ROSTER render ────────────────────────────────────────────────────────
+function sortDevy(col) {
+  if (DEVY_SORT.col === col) DEVY_SORT.dir *= -1;
+  else { DEVY_SORT.col = col; DEVY_SORT.dir = 1; }
+  renderDevy();
+}
+
+function renderDevy() {
+  const q      = (document.getElementById('f-name')?.value || '').toLowerCase();
+  const pos    = document.getElementById('f-pos')?.value || '';
+  const school = document.getElementById('f-school')?.value || '';
+  const owner  = document.getElementById('f-owner')?.value || '';
+
+  let rows = DATA.devyRows.filter(r => {
+    if (r.inSleeper) return false; // hide players already in NFL
+    if (q      && !r.playerName.toLowerCase().includes(q) && !r.devyPlayer.toLowerCase().includes(q)) return false;
+    if (pos    && r.pos !== pos) return false;
+    if (school && r.school !== school) return false;
+    if (owner  && r.owner !== owner) return false;
+    return true;
+  });
+
+  // Sort
+  rows.sort((a, b) => {
+    const col = DEVY_SORT.col === 'name' ? 'playerName' : DEVY_SORT.col;
+    const av  = a[col] || '';
+    const bv  = b[col] || '';
+    return av.localeCompare(bv) * DEVY_SORT.dir;
+  });
+
+  document.getElementById('devy-count').textContent = rows.length + ' players';
+
+  const tbody = document.getElementById('tbody-devy');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">${DATA.devyRows.length ? 'No players match your filters.' : 'Hit Refresh to load data.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.playerName}</strong></td>
+      <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
+      <td class="hide-mobile">
+        ${r.school
+          ? `<span style="font-size:12px;font-weight:600;color:#a5b4fc">${r.school}</span>`
+          : '<span style="color:var(--mu)">—</span>'}
+      </td>
+      <td><span class="owner-pill">${r.owner}</span></td>
+      <td class="hide-mobile"><span class="year-badge">${r.yearPick || '—'}</span></td>
+      <td class="hide-mobile" style="color:var(--mu);font-size:12px;font-family:var(--mono)">${r.placeholder || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── DRAFT BOARD helpers ───────────────────────────────────────────────────────
+function normPickKey(raw) {
+  if (!raw) return '';
+  const parts = String(raw).trim().split('.');
+  return parts.length === 3
+    ? parts[0] + '.' + parts[1].padStart(2,'0') + '.' + parts[2].padStart(2,'0')
+    : raw;
+}
+
+function normOwnerPub(s) {
+  return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function buildDraftPicks() {
+  // Build lookup maps from Import + Dropped sheets
+  const importByPick  = new Map(); // normPickKey → Import row
+  const droppedByPick = new Map(); // normPickKey → Dropped row
+  const droppedKeys   = new Set(); // normPickKeys that are dropped
+  const stillDevySet  = new Set(); // normName of devys still in league
+
+  DATA.devyRows.forEach(r => {
+    if (r.yearPick) importByPick.set(normPickKey(r.yearPick), r);
+    if (!r.inSleeper) stillDevySet.add(normName(r.playerName));
+  });
+
+  DATA.droppedRows.forEach(r => {
+    if (r.yearPick) {
+      const k = normPickKey(r.yearPick);
+      droppedByPick.set(k, r);
+      droppedKeys.add(k);
+    }
+  });
+
+  // Process raw Sleeper picks through four-overlay
+  const processed = DATA.rawSleeperPicks.map(p => {
+    const season      = p._season || '';
+    const round       = p.round || 1;
+    const slot        = p._slotInRound || p.draft_slot || 1;
+    const rawName     = ((p.metadata?.first_name||'') + ' ' + (p.metadata?.last_name||'')).trim();
+    const pos         = (p.metadata?.position || '').toUpperCase();
+    const nflTeam     = p.metadata?.team || '';
+    const pickDisp    = season + '.' + String(round).padStart(2,'0') + '.' + String(slot).padStart(2,'0');
+    const pickKey     = pickDisp; // already normalized
+    const owner       = DATA.sleeperUserMap[p.picked_by] || 'Unknown';
+
+    const importRow   = importByPick.get(pickKey);
+    const droppedRow  = droppedByPick.get(pickKey);
+    const isDropped   = droppedKeys.has(pickKey);
+
+    let displayName, displayPos, type, schoolTeam, tradedTo = null;
+
+    if (importRow && (pos === 'K' || pos === 'TE')) {
+      // Authoritative: placeholder matched Import row
+      const isStillDevy = stillDevySet.has(normName(importRow.playerName));
+      displayName = importRow.playerName;
+      displayPos  = (importRow.pos || pos).toUpperCase();
+      type        = isStillDevy ? 'DEVY' : 'DEV-NFL';
+      schoolTeam  = importRow.school || '';
+      // Trade detection
+      const importOwner = (importRow.owner || '').trim();
+      if (importOwner && !importRow.inSleeper && normOwnerPub(importOwner) !== normOwnerPub(owner)) {
+        tradedTo = importOwner;
+      }
+    } else if (droppedRow && (pos === 'K' || pos === 'TE')) {
+      displayName = droppedRow.playerName || '[Dropped devy]';
+      displayPos  = (droppedRow.pos || pos).toUpperCase();
+      type        = 'DEVY';
+      schoolTeam  = droppedRow.school || '';
+    } else if (isDropped && (pos === 'K' || pos === 'TE')) {
+      displayName = '[Dropped devy]';
+      displayPos  = pos;
+      type        = 'DEVY';
+      schoolTeam  = '';
+    } else if (pos === 'K' && !importRow) {
+      displayName = '[Devy — name unknown]';
+      displayPos  = pos;
+      type        = 'DEVY';
+      schoolTeam  = '';
+    } else {
+      // Real NFL pick
+      displayName = rawName;
+      displayPos  = pos;
+      type        = 'NFL';
+      schoolTeam  = nflTeam;
+    }
+
+    return {
+      pick:       pickDisp,
+      year:       season,
+      round,
+      slot,
+      player:     displayName,
+      pos:        displayPos,
+      school:     schoolTeam,
+      owner,
+      tradedTo,
+      isDropped,
+      type,       // DEVY | DEV-NFL | NFL
+    };
+  });
+
+  DATA.sleeperPicks = processed;
+}
+
+function sortDraft(col) {
+  if (DRAFT_SORT.col === col) DRAFT_SORT.dir *= -1;
+  else { DRAFT_SORT.col = col; DRAFT_SORT.dir = 1; }
+  renderDraft();
+}
+
+function renderDraft() {
+  // Build processed picks fresh (fast, in-memory)
+  buildDraftPicks();
+
+  const q      = (document.getElementById('d-name')?.value || '').toLowerCase();
+  const yearSel2 = document.getElementById('d-year');
+  const year   = yearSel2?.value ?? '';
+  const owner  = document.getElementById('d-owner')?.value || '';
+  const type   = document.getElementById('d-type')?.value || '';
+
+
+  const isDevy    = r => r.type === 'DEVY' || r.type === 'DEV-NFL';
+  const isDevyCur = r => r.type === 'DEVY';
+  const isDevyNfl = r => r.type === 'DEV-NFL';
+  const isNfl     = r => r.type === 'NFL';
+
+  let rows = DATA.sleeperPicks.filter(r => {
+    if (q     && !r.player.toLowerCase().includes(q)) return false;
+    if (year  && r.year !== year) return false;
+    if (owner && r.owner !== owner) return false;
+if (type === 'devy-all' && !isDevy(r))    return false;
+    if (type === 'devy-cur' && !isDevyCur(r)) return false;
+    if (type === 'devy-nfl' && !isDevyNfl(r)) return false;
+    if (type === 'nfl'      && !isNfl(r))     return false;
+    return true;
+  });
+
+  // Sort: newest year first, then pick order (round.slot) ascending within year
+  rows.sort((a, b) => {
+    if (DRAFT_SORT.col === 'pick' || true) {
+      if (a.year !== b.year) return b.year.localeCompare(a.year); // newest year first
+      const aKey = String(a.round).padStart(2,'0') + '.' + String(a.slot).padStart(2,'0');
+      const bKey = String(b.round).padStart(2,'0') + '.' + String(b.slot).padStart(2,'0');
+      return aKey.localeCompare(bKey); // pick order ascending within year
+    }
+  });
+
+  document.getElementById('draft-count').textContent = rows.length + ' picks';
+
+  const tbody = document.getElementById('tbody-draft');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">${DATA.rawSleeperPicks.length ? 'No picks match your filters.' : 'Hit Refresh to load data.'}</td></tr>`;
+    return;
+  }
+
+  const pillStyle = (type) => {
+    if (type === 'DEVY')    return 'background:rgba(99,102,241,.2);color:#a5b4fc';
+    if (type === 'DEV-NFL') return 'background:rgba(99,102,241,.12);color:#c7d2fe';
+    return 'background:rgba(52,211,153,.15);color:#6ee7b7';
+  };
+  const pillLabel = (type) => {
+    if (type === 'DEVY')    return 'DEVY';
+    if (type === 'DEV-NFL') return 'DEV→NFL';
+    return 'NFL';
+  };
+
+  tbody.innerHTML = rows.map(r => {
+    const rowStyle = r.isDropped
+      ? 'border-left:3px solid var(--err);background:rgba(248,113,113,.04)'
+      : r.tradedTo
+        ? 'border-left:3px solid var(--warn)'
+        : '';
+    return `<tr style="${rowStyle}">
+      <td><span class="year-badge">${r.pick}</span></td>
+      <td>
+        <strong>${r.player}</strong>
+        ${r.isDropped ? '<span class="dropped-badge" style="margin-left:6px">DROPPED</span>' : ''}
+        ${r.tradedTo ? '<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 5px;border-radius:3px;background:rgba(234,179,8,.12);color:var(--warn);margin-left:6px">TRADED</span>' : ''}
+      </td>
+      <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
+      <td class="hide-mobile">
+        ${r.school
+          ? `<span style="font-size:12px;font-weight:600;color:${r.type === 'NFL' ? '#6ee7b7' : '#a5b4fc'}">${r.school}</span>`
+          : '<span style="color:var(--mu)">—</span>'}
+      </td>
+      <td>
+        <span class="owner-pill">${r.owner}</span>
+        ${r.tradedTo ? `<div style="font-size:11px;color:var(--warn);margin-top:2px">→ ${r.tradedTo}</div>` : ''}
+      </td>
+      <td class="hide-mobile"><span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:var(--mono);${pillStyle(r.type)}">${pillLabel(r.type)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── DROPPED render ────────────────────────────────────────────────────────────
+function renderDropped() {
+  const q      = (document.getElementById('dr-name')?.value || '').toLowerCase();
+  const school = document.getElementById('dr-school')?.value || '';
+  const year   = document.getElementById('dr-year')?.value || '';
+
+  let rows = DATA.droppedRows.filter(r => {
+    if (q      && !r.playerName.toLowerCase().includes(q)) return false;
+    if (school && r.school !== school) return false;
+    if (year   && r.yearPick?.startsWith(year + '.') === false) return false;
+    return true;
+  });
+
+  document.getElementById('dropped-count').textContent = rows.length + ' players';
+
+  const tbody = document.getElementById('tbody-dropped');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">${DATA.droppedRows.length ? 'No dropped players match your filters.' : 'Hit Refresh to load data.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="hide-mobile"><span class="year-badge">${r.yearPick || '—'}</span></td>
+      <td>
+        <strong>${r.playerName}</strong>
+        <span class="dropped-badge" style="margin-left:8px">DROPPED</span>
+      </td>
+      <td><span class="badge ${r.pos || 'pos'}">${r.pos || '—'}</span></td>
+      <td class="hide-mobile">
+        ${r.school
+          ? `<span style="font-size:12px;font-weight:600;color:#a5b4fc">${r.school}</span>`
+          : '<span style="color:var(--mu)">—</span>'}
+      </td>
+      <td><span class="owner-pill">${r.owner || 'Unknown'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── OWNER ROSTERS ─────────────────────────────────────────────────────────────
+let expandedOwner = null; // tracks which owner row is currently expanded
+
+function renderOwnerRosters() {
+  const stripEl  = document.getElementById('owner-kpi-strip');
+  const tbody    = document.getElementById('tbody-owners');
+  if (!DATA.rosters?.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Hit Refresh to load data.</td></tr>`;
+    stripEl.innerHTML = '';
+    return;
+  }
+
+  // Build per-owner devy lists from Import sheet (only currently-owned devys, not in Sleeper as real NFL players)
+  const devysByOwner = {}; // ownerHandle → [{ playerName, pos, school, yearPick }]
+  DATA.devyRows.forEach(r => {
+    if (r.inSleeper) return; // already in NFL, not a current devy holding
+    if (!devysByOwner[r.owner]) devysByOwner[r.owner] = [];
+    devysByOwner[r.owner].push(r);
+  });
+
+  // Build per-roster counts: total comes straight from Sleeper roster size,
+  // devys come from Import sheet, vets+rookies is just the remainder — no player DB needed.
+  const rosterStats = DATA.rosters.map(roster => {
+    const ownerHandle = DATA.sleeperUserMap[roster.owner_id] || 'Unknown';
+    const total      = (roster.players || []).length;
+    const devyCount  = (devysByOwner[ownerHandle] || []).length;
+    const others     = Math.max(0, total - devyCount); // vets + rookies combined
+    return {
+      owner: ownerHandle,
+      others,
+      devys: devyCount,
+      total,
+    };
+  }).sort((a, b) => a.owner.localeCompare(b.owner));
+
+  // ── KPI calculations ──
+  const totalDevys     = rosterStats.reduce((s, r) => s + r.devys, 0);
+  const totalPlayers   = rosterStats.reduce((s, r) => s + r.total, 0);
+  const pctDevy        = totalPlayers > 0 ? (totalDevys / totalPlayers * 100) : 0;
+  const avgDevys       = rosterStats.length > 0 ? (totalDevys / rosterStats.length) : 0;
+  const devyCap        = CFG.devyCap || 0;
+  const ownersAtOrOver = devyCap > 0 ? rosterStats.filter(r => r.devys >= devyCap).length : null;
+
+  stripEl.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Devys Rostered</div>
+      <div class="kpi-value">${totalDevys}</div>
+    </div>
+    <div class="kpi-card hide-mobile">
+      <div class="kpi-label">% Rosters Devy</div>
+      <div class="kpi-value">${pctDevy.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card hide-mobile">
+      <div class="kpi-label">Avg Devys Per Roster</div>
+      <div class="kpi-value">${avgDevys.toFixed(1)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Owners At/Over Cap</div>
+      <div class="kpi-value">${devyCap > 0 ? ownersAtOrOver : '—'}</div>
+    </div>
+  `;
+
+  // ── Table rows + accordion ──
+  tbody.innerHTML = rosterStats.map(r => {
+    const devyClass = devyCap > 0
+      ? (r.devys >= devyCap ? 'over' : r.devys >= devyCap - 2 ? 'near' : 'ok')
+      : '';
+    const devyPillHtml = devyCap > 0
+      ? `<span class="devy-pill ${devyClass}">${r.devys}</span>`
+      : `<span class="count">${r.devys}</span>`;
+    const capValHtml = devyCap > 0 ? devyCap : '—';
+
+    return `
+      <tr class="owner-row" onclick="toggleOwnerAccordion('${r.owner.replace(/'/g,"\\'")}')">
+        <td class="owner-name-cell"><span class="owner-caret" id="caret-${cssSafe(r.owner)}">▶</span> ${r.owner}</td>
+        <td class="hide-mobile"><span class="count">${r.total}</span></td>
+        <td class="hide-mobile"><span class="count">${r.others}</span></td>
+        <td>${devyPillHtml}</td>
+        <td><span class="cap-val">${capValHtml}</span></td>
+      </tr>
+      <tr class="owner-accordion-row" id="accordion-${cssSafe(r.owner)}" style="display:none">
+        <td colspan="5">
+          <div class="owner-accordion-inner">
+            <div class="owner-acc-label">Devys (${r.devys})</div>
+            ${buildDevyListTable(devysByOwner[r.owner] || [])}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function cssSafe(s) {
+  return (s || '').replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function buildDevyListTable(devys) {
+  if (!devys.length) {
+    return '<div style="font-size:12px;color:var(--mu)">No current devy holdings.</div>';
+  }
+  const posOrder = { QB: 0, RB: 1, WR: 2, TE: 3, DL: 4, LB: 5, DB: 6 };
+  const sorted = [...devys].sort((a, b) => {
+    const pa = posOrder[a.pos] ?? 99;
+    const pb = posOrder[b.pos] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return a.playerName.localeCompare(b.playerName);
+  });
+  return `
+    <table class="devy-list-table">
+      <thead><tr><th>Player</th><th>Pos</th><th>School</th><th>Drafted</th></tr></thead>
+      <tbody>
+        ${sorted.map(d => `
+          <tr>
+            <td>${d.playerName}</td>
+            <td><span class="badge ${d.pos || 'pos'}">${d.pos || '—'}</span></td>
+            <td style="color:var(--mu2)">${d.school || '—'}</td>
+            <td>${d.yearPick || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function toggleOwnerAccordion(owner) {
+  const key      = cssSafe(owner);
+  const row      = document.getElementById('accordion-' + key);
+  const caret    = document.getElementById('caret-' + key);
+  const isOpen   = row.style.display !== 'none';
+
+  // Close any other open accordion first
+  if (expandedOwner && expandedOwner !== owner) {
+    const prevKey = cssSafe(expandedOwner);
+    const prevRow = document.getElementById('accordion-' + prevKey);
+    const prevCaret = document.getElementById('caret-' + prevKey);
+    if (prevRow) prevRow.style.display = 'none';
+    if (prevCaret) prevCaret.classList.remove('open');
+  }
+
+  row.style.display = isOpen ? 'none' : 'table-row';
+  caret.classList.toggle('open', !isOpen);
+  expandedOwner = isOpen ? null : owner;
+}
+
+
+let eligDebounce = null;
+function eligCheck() {
+  clearTimeout(eligDebounce);
+  eligDebounce = setTimeout(doEligCheck, 300);
+}
+
+async function doEligCheck() {
+  const q   = (document.getElementById('elig-input')?.value || '').trim().toLowerCase();
+  const out = document.getElementById('elig-result');
+  if (q.length < 2) {
+    out.className = 'elig-result';
+    out.style.color = 'var(--mu2)';
+    out.textContent = 'Enter a player name to check ownership and eligibility.';
+    return;
+  }
+
+  // Gather owned matches
+  const ownedMatches = DATA.devyRows.filter(r =>
+    r.playerName.toLowerCase().includes(q) ||
+    r.devyPlayer.toLowerCase().includes(q)
+  );
+
+  // Load ESPN on demand (needed regardless of owned matches, to catch same-name different-player cases)
+  if (!DATA.espnRows) {
+    out.className = 'elig-result';
+    out.style.color = 'var(--mu2)';
+    out.innerHTML = '<span class="spin"></span> Checking eligibility data…';
+    DATA.espnRows = await fetchCSV(CFG.espnUrl, true);
+    out.style.color = ''; // clear inline override before final result is rendered
+  }
+
+  const curYear = new Date().getFullYear();
+  const ownedNames = new Set(ownedMatches.map(o => normName(o.playerName)));
+
+  // ESPN matches that are NOT already in the owned list (avoid double-counting same player)
+  const espnMatches = DATA.espnRows.filter(cols => {
+    const name = gc(COL.e_name, cols);
+    if (!name.toLowerCase().includes(q)) return false;
+    return !ownedNames.has(normName(name));
+  });
+
+  // Split ESPN matches: only ineligible players are worth naming individually.
+  // Eligible-and-unowned matches are never named — that would expose recruit data
+  // to casual/partial searches and turn this into a roster-browsing tool.
+  const ineligibleMatches = espnMatches.filter(m => {
+    const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
+    return enrollYear > curYear - CFG.eligYears;
+  });
+  const eligibleUnownedCount = espnMatches.length - ineligibleMatches.length;
+
+  const totalNamedMatches = ownedMatches.length + ineligibleMatches.length;
+
+  // Nothing owned, nothing ineligible — collapse to one generic line regardless of
+  // whether there were 0 or several eligible-unowned hits behind the scenes.
+  if (totalNamedMatches === 0) {
+    out.className = 'elig-result maybe';
+    out.textContent = `Not owned and not flagged ineligible — might be available, please verify before picking`;
+    return;
+  }
+
+  // Build status lines — only for owned and ineligible matches
+  const lines = []; // { text, status: 'owned'|'inelig' }
+
+  ownedMatches.forEach(o => {
+    const pickStr = o.yearPick ? `  —  Drafted ${o.yearPick}` : '';
+    lines.push({ text: `👤 ${o.playerName} — Owned by ${o.owner}${pickStr}`, status: 'owned' });
+  });
+
+  ineligibleMatches.forEach(m => {
+    const name = gc(COL.e_name, m);
+    const enrollYear = parseInt(gc(COL.e_enrollYear, m)) || 0;
+    lines.push({ text: `⚠ ${name} — Ineligible this season (class of ${enrollYear})`, status: 'inelig' });
+  });
+
+  // Append a generic note if there were ALSO eligible-unowned matches we're not naming
+  if (eligibleUnownedCount > 0) {
+    lines.push({ text: `Other matching players might also be available — verify spelling if you don't see who you're looking for`, status: 'maybe' });
+  }
+
+  const colorFor = status =>
+    status === 'owned'  ? 'var(--warn)' :
+    status === 'inelig' ? 'var(--err)'  :
+    'var(--maybe)';
+
+  // Single named match (and no generic "others may exist" note) — show plainly
+  if (totalNamedMatches === 1 && eligibleUnownedCount === 0) {
+    out.className = 'elig-result ' + lines[0].status;
+    out.textContent = lines[0].text;
+    return;
+  }
+
+  // Multiple named matches, or a named match plus a generic note — show all
+  out.className = 'elig-result';
+  out.innerHTML = `${totalNamedMatches} player${totalNamedMatches === 1 ? '' : 's'} found for "${q}":<br>` +
+    lines.map(l => `&nbsp;&nbsp;<span style="color:${colorFor(l.status)}">${l.text}</span>`).join('<br>');
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['devy','owners','draft','dropped'][i] === tab);
+  });
+  document.querySelectorAll('.page').forEach(el => {
+    el.classList.toggle('active', el.id === 'page-' + tab);
+  });
+  if (tab === 'owners') renderOwnerRosters();
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+function setStatus(msg, live = false) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'hdr-status' + (live ? ' live' : '');
+}
+
+// ── Auto-load on open ─────────────────────────────────────────────────────────
+refresh();
+</script>
+</body>
+</html>
