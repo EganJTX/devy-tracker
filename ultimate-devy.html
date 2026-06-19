@@ -1326,8 +1326,9 @@ async function doEligCheck() {
 
   // Gather owned matches
   const ownedMatches = DATA.devyRows.filter(r =>
-    r.playerName.toLowerCase().includes(q) ||
-    r.devyPlayer.toLowerCase().includes(q)
+    !r.inSleeper &&
+    (r.playerName.toLowerCase().includes(q) ||
+    r.devyPlayer.toLowerCase().includes(q))
   );
 
   // Load ESPN on demand (needed regardless of owned matches, to catch same-name different-player cases)
