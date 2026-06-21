@@ -981,8 +981,8 @@ function buildDraftPicks() {
 
     let displayName, displayPos, type, schoolTeam, tradedTo = null;
 
-    if (importRow && (pos === 'K' || pos === 'TE')) {
-      // Authoritative: placeholder matched Import row
+    if (importRow) {
+      // Authoritative: yearPick matched Import row — always a devy pick regardless of Sleeper placeholder pos
       const isStillDevy = stillDevySet.has(normName(importRow.playerName));
       displayName = importRow.playerName;
       displayPos  = (importRow.pos || pos).toUpperCase();
@@ -993,12 +993,12 @@ function buildDraftPicks() {
       if (importOwner && !importRow.inSleeper && normOwnerPub(importOwner) !== normOwnerPub(owner)) {
         tradedTo = importOwner;
       }
-    } else if (droppedRow && (pos === 'K' || pos === 'TE')) {
+    } else if (droppedRow) {
       displayName = droppedRow.playerName || '[Dropped devy]';
       displayPos  = (droppedRow.pos || pos).toUpperCase();
       type        = 'DEVY';
       schoolTeam  = droppedRow.school || '';
-    } else if (isDropped && (pos === 'K' || pos === 'TE')) {
+    } else if (isDropped) {
       displayName = '[Dropped devy]';
       displayPos  = pos;
       type        = 'DEVY';
