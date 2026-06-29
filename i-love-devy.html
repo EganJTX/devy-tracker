@@ -782,7 +782,7 @@ async function refresh() {
         const drafts = await drRes.json();
         const season = lg?.season || '';
         for (const dr of (drafts || [])) {
-          if (dr.status === 'complete' || dr.status === 'drafting') {
+          if (['complete', 'drafting', 'paused'].includes(dr.status)) {
             allDrafts.push({ ...dr, _season: season });
           }
         }
